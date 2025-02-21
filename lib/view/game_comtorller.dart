@@ -1,9 +1,11 @@
-
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
-class GameController with ChangeNotifier{
-
+class GameController with ChangeNotifier {
   bool _isExpanded = false;
 
   bool get isExpanded => _isExpanded;
@@ -12,6 +14,7 @@ class GameController with ChangeNotifier{
     _isExpanded = value;
     notifyListeners();
   }
+
   bool _betPlaced = false;
   bool _betStop = false;
   // int _countdownSeconds = 30;
@@ -147,29 +150,8 @@ class GameController with ChangeNotifier{
       '400x',
       '2000x'
     ], // For 7 selections
-    [
-      '1',
-      '0x',
-      '0x',
-      '1x',
-      '5.38x',
-      '11x',
-      '50x',
-      '5000x',
-      '10000x'
-    ],
-    [
-      '2x',
-      '0x',
-      '0x',
-      '0x',
-      '2x',
-      '10.86x',
-      '50x',
-      '1000x',
-      '5000x',
-      '25000x'
-    ],
+    ['1', '0x', '0x', '1x', '5.38x', '11x', '50x', '5000x', '10000x'],
+    ['2x', '0x', '0x', '0x', '2x', '10.86x', '50x', '1000x', '5000x', '25000x'],
     [
       '2x',
       '0x',
@@ -184,8 +166,6 @@ class GameController with ChangeNotifier{
       '10000x'
     ],
   ];
-
-
 
   // Getters
   bool get betPlaced => _betPlaced;
@@ -225,7 +205,6 @@ class GameController with ChangeNotifier{
     }
   }
 
-
   int _kinoMinuteTime = 0;
   int get kinoMinuteTime => _kinoMinuteTime;
   int _kinoMinuteStatus = 0;
@@ -236,39 +215,56 @@ class GameController with ChangeNotifier{
     notifyListeners();
   }
 
-  // late IO.Socket _socket;
-  //
-  // void connectToServer(BuildContext context, KinoResultApi resultProvider) {
-  //   _socket = IO.io(
-  //     KinoUrl.kinoSocket,
-  //     IO.OptionBuilder().setTransports(['websocket']).build(),
-  //   );
-  //   socket.on('connect', () {
-  //     if (kDebugMode) {
-  //     }
-  //   });
-  //   _socket.onConnectError((data) {
-  //     if (kDebugMode) {
-  //     }
-  //   });
-  //   _socket.on(KinoUrl.kinoSocketEvent, (response) {
-  //     final res = jsonDecode(response);
-  //     setKinoMinutesData(res['timerBetTime'], res['timerStatus']);
-  //     if(res['timerBetTime']==29 && res['timerStatus']==1){
-  //       resultProvider.resultFetch();
-  //       resultProvider.response.first.gamesno;
-  //       kinoWinLossApi(context: context, gameNo: resultProvider.response.first.gamesno.toString());
-  //     } else if(res['timerBetTime']< 10  && res['timerBetTime']> 1 && res['timerStatus']==1){
-  //       setBetStop(true);
-  //     }
-  //     if (res['timerBetTime'] == 1 && res['timerStatus']==1 ) {
-  //       setBetStop(false);
-  //       setBetPlaced(false);
-  //       selectedNumbers.clear();
-  //     }
-  //   });
-  //   _socket.connect();
-  // }
+  int _timeData = 0;
+
+  int get timeData => _timeData;
+
+  setTimeData(int value) {
+    _timeData = value;
+    notifyListeners();
+  }
+
+  int _selectedIndex = 0;
+
+  int get selectedIndex => _selectedIndex;
+
+  setSelectedIndex(int value) {
+    _selectedIndex = value;
+    notifyListeners();
+  }
+
+  late IO.Socket _socket;
+  dynamic receiveData = {};
+  void connectToServer() {
+    _socket = IO.io(
+      "https://aviatorudaan.com/",
+      IO.OptionBuilder().setTransports(['websocket']).build(),
+    );
+    _socket.on('connect', (_) {
+      if (kDebugMode) {
+        print("Socket connected successfully");
+      }
+    });
+    _socket.onConnectError((data) {
+      if (kDebugMode) {
+        print("Socket not connected ");
+      }
+    });
+    _socket.on("root", (data) {
+      receiveData = jsonDecode(data);
+      setTimeData(receiveData['timerBetTime']);
+      selectedIndex == 0
+          ? setTimeData(receiveData['timerBetTime'])
+          : selectedIndex == 1
+              ? setTimeData(receiveData['oneMinTimer'])
+              : selectedIndex == 2
+                  ? setTimeData(receiveData['threeMinTimer'])
+                  : selectedIndex == 3
+                      ? setTimeData(receiveData['fiveMinTimer'])
+                      : setTimeData(receiveData['tenMinTimer']);
+    });
+    _socket.connect();
+  }
 
   String formatTime(int seconds, int position) {
     final Duration duration = Duration(seconds: seconds);
@@ -325,60 +321,10 @@ class GameController with ChangeNotifier{
       default:
         return [];
     }
-
   }
 
   void setSelectedValue(int value) {
     _selectedValue = value;
     notifyListeners();
   }
-}
-
-
-class KiNoBoolProvider with ChangeNotifier {
-
-
-  // dynamic  result;
-  // dynamic  gamesno;
-  // dynamic numberList;
-  // dynamic amount;
-  // Future<void> kinoWinLossApi({required BuildContext context, required String gameNo}) async {
-  //   try {
-  //     final response = await http.post(
-  //       Uri.parse(KinoUrl.kinoWinResult),
-  //       headers: <String, String>{
-  //         'Content-Type': 'application/json; charset=UTF-8',
-  //       },
-  //       body: jsonEncode({
-  //         "userid" : "3",
-  //         "game_id" : "23",
-  //         "gamesno": gameNo
-  //       }),
-  //     );
-  //     print({
-  //       "userid" : "3",
-  //       "game_id" : "23",
-  //       "gamesno": gameNo
-  //     });
-  //     print("response");
-  //     final data = jsonDecode(response.body);
-  //     if (response.statusCode == 200) {
-  //       result = data['result'];
-  //       gamesno = data['gamesno'];
-  //       numberList = (data['number'] as Map<String, dynamic>).values.toList();
-  //       amount = data['amount'];
-  //       Utils.flushBarSuccessMessage(data['message'], context);
-  //       showDialog(context: context, builder: (context)=>WinPopUpPage(
-  //         winNumber: numberList.join(", "),
-  //         gameSrNo: gamesno,
-  //         winAmount: amount,
-  //       ));
-  //       print('api chli');
-  //     }
-  //   } catch (e) {
-  //     rethrow;
-  //   } finally {
-  //
-  //   }
-  // }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hot_air_balloon/generated/assets.dart';
 import 'package:hot_air_balloon/main.dart';
 import 'package:hot_air_balloon/res/app_colors.dart';
 import 'package:hot_air_balloon/view/game/hot_air_balloon_app_bar.dart';
@@ -12,7 +13,22 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> {
+class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStateMixin{
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 50),
+    )..repeat();
+
+    _animation = Tween<double>(begin:0, end: 0.5).animate(_controller);
+  }
+
   @override
   Widget build(BuildContext context) {
     final game=Provider.of<GameController>(context);
@@ -58,10 +74,46 @@ class _GameScreenState extends State<GameScreen> {
               height: height*0.5,
               width: width*0.95,
               decoration: BoxDecoration(
-                // gradient: AppColor.appBg,
-                image: DecorationImage(image: AssetImage("assets/images/bg.png"),fit: BoxFit.fill)
+
               ),
-              // child: Image.asset(name),
+              child: AnimatedBuilder(
+                animation: _animation,
+                builder: (context, child) {
+                  return Stack(
+                    children: [
+                      Positioned(
+                        // top: 0,
+                        top: 100 * _animation.value,
+                        left: 0,
+                        right: 0,
+                        child: Image.asset(
+                          'assets/images/balloon_bg.png', // Replace with your asset path
+                          fit: BoxFit.fill,
+                          height: height*0.5 , // Ensure smooth looping
+                        ),
+                      ),
+                      Positioned(
+                        // top: -600 * _animation.value,
+                        left: 0,
+                        right: 0,
+                        bottom: 600 * _animation.value ,
+                        child: Center(child: Container(
+                          padding: EdgeInsets.only(bottom: 25),
+                          alignment: Alignment.center,
+                            height: height*0.15,
+                            width: width*0.25,
+                            decoration: BoxDecoration(
+                              // color: AppColor.red,
+                              // gradient: AppColor.appBg,
+                              image: DecorationImage(image: AssetImage(Assets.imagesBalloon),fit: BoxFit.fill)
+                            ),
+                            child:Text("2.2X",style: TextStyle(color: AppColor.white,fontWeight: FontWeight.w600,fontSize: 20),))),
+                      ),
+
+                    ],
+                  );
+                },
+              ),
             ),
             Container(
               margin: EdgeInsets.only(top: height*0.02),
@@ -85,7 +137,7 @@ class _GameScreenState extends State<GameScreen> {
                         //   );
                         // } else {
                         //   setState(() {
-                        //     betPlaced.toggleBetPlaced();
+                            game.toggleBetPlaced();
                         //   });
                         // }
                         // betApi.betPlacedApi(
@@ -234,84 +286,84 @@ class _GameScreenState extends State<GameScreen> {
                                                 ),
                                                 const SizedBox(
                                                     height: 20),
-                                                // Container(
-                                                //   color:
-                                                //   const Color(0xff2b7009),
-                                                //   height: 100,
-                                                //   width:
-                                                //   double.maxFinite,
-                                                //   child:
-                                                //   GridView.builder(
-                                                //     shrinkWrap: true,
-                                                //     itemCount:
-                                                //     items.length,
-                                                //     gridDelegate:
-                                                //     const SliverGridDelegateWithFixedCrossAxisCount(
-                                                //       crossAxisCount: 3,
-                                                //       mainAxisSpacing:
-                                                //       10,
-                                                //       crossAxisSpacing:
-                                                //       10,
-                                                //       childAspectRatio:
-                                                //       4 / 2,
-                                                //     ),
-                                                //     itemBuilder:
-                                                //         (context,
-                                                //         index) {
-                                                //       final isSelected =
-                                                //           game
-                                                //               .selectedNumber ==
-                                                //               items[
-                                                //               index];
-                                                //       return InkWell(
-                                                //         onTap: () {
-                                                //           setState(() {
-                                                //             game.setSelectedNumber(
-                                                //                 items[
-                                                //                 index]);
-                                                //           });
-                                                //           Navigator.pop(
-                                                //               context);
-                                                //         },
-                                                //         child:
-                                                //         Container(
-                                                //           height: 20,
-                                                //           width: 40,
-                                                //           decoration:
-                                                //           BoxDecoration(
-                                                //             borderRadius:
-                                                //             BorderRadius.circular(
-                                                //                 10),
-                                                //             border:
-                                                //             Border
-                                                //                 .all(
-                                                //               width: 1,
-                                                //               color: Colors
-                                                //                   .black,
-                                                //             ),
-                                                //             color: const Color(
-                                                //                 0xff569123),
-                                                //           ),
-                                                //           child: Center(
-                                                //             child: Text(
-                                                //               '${items[index]}',
-                                                //               style:
-                                                //               TextStyle(
-                                                //                 fontSize:
-                                                //                 15,
-                                                //                 fontWeight:
-                                                //                 FontWeight.w900,
-                                                //                 color: isSelected
-                                                //                     ? Colors.white
-                                                //                     : Colors.black,
-                                                //               ),
-                                                //             ),
-                                                //           ),
-                                                //         ),
-                                                //       );
-                                                //     },
-                                                //   ),
-                                                // ),
+                                                Container(
+                                                  color:
+                                                  const Color(0xff2b7009),
+                                                  height: 100,
+                                                  width:
+                                                  double.maxFinite,
+                                                  child:
+                                                  GridView.builder(
+                                                    shrinkWrap: true,
+                                                    itemCount:10,
+                                                    // items.length,
+                                                    gridDelegate:
+                                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                                      crossAxisCount: 3,
+                                                      mainAxisSpacing:
+                                                      10,
+                                                      crossAxisSpacing:
+                                                      10,
+                                                      childAspectRatio:
+                                                      4 / 2,
+                                                    ),
+                                                    itemBuilder:
+                                                        (context,
+                                                        index) {
+                                                      final isSelected =
+                                                          game
+                                                              .selectedNumber ==5;
+                                                              // items[
+                                                              // index];
+                                                      return InkWell(
+                                                        onTap: () {
+                                                          setState(() {
+                                                            game.setSelectedNumber(2);
+                                                                // items[
+                                                                // index]);
+                                                          });
+                                                          Navigator.pop(
+                                                              context);
+                                                        },
+                                                        child:
+                                                        Container(
+                                                          height: 20,
+                                                          width: 40,
+                                                          decoration:
+                                                          BoxDecoration(
+                                                            borderRadius:
+                                                            BorderRadius.circular(
+                                                                10),
+                                                            border:
+                                                            Border
+                                                                .all(
+                                                              width: 1,
+                                                              color: Colors
+                                                                  .black,
+                                                            ),
+                                                            color: const Color(
+                                                                0xff569123),
+                                                          ),
+                                                          child: Center(
+                                                            child: Text(
+                                                              '${2}',
+                                                              style:
+                                                              TextStyle(
+                                                                fontSize:
+                                                                15,
+                                                                fontWeight:
+                                                                FontWeight.w900,
+                                                                color: isSelected
+                                                                    ? Colors.white
+                                                                    : Colors.black,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                           ),

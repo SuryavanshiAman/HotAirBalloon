@@ -37,7 +37,8 @@ dependencies:
   http:
   flutter_styled_toast:
   provider:
-
+  socket_io_client:
+  dio:
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -123,7 +123,7 @@ class MenuItem extends StatelessWidget {
                   ],
                   Text(
                     label,
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
                   ),
                   const SizedBox(width: 20,),
                   if (actionIcon != null) actionIcon!, // Display trailing widget if provided

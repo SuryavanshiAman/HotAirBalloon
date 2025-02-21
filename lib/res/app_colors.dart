@@ -22,6 +22,7 @@ class AppColor{
   static const Color  lightCream = Color(0xffe5cf8b);
   static const Color  lightMix = Color(0xffc6cda5);
   static const Color  darkGreen = Color(0xff569123);
+  static const Color  peetch = Color(0xfff1e0d8);
   static const green = Colors.green;
 
   static const LinearGradient appBarGradient = LinearGradient(
@@ -44,7 +45,7 @@ class AppColor{
     end: Alignment.bottomRight,
   );
   static const LinearGradient appBg = LinearGradient(
-      colors: [Color(0xff9ac5b9), Color(0xffc6cda5),Color(0xffe5cf8b)],
+      colors: [Color(0xfff1e0d8), AppColor.peetch,Color(0xffe5cf8b)],
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter
   );

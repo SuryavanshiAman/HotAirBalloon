@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hot_air_balloon/res/app_constant.dart';
+import 'package:hot_air_balloon/test.dart';
 import 'package:hot_air_balloon/view/game_comtorller.dart';
 import 'package:provider/provider.dart';
 
@@ -23,7 +24,7 @@ class MyApp extends StatelessWidget {
             ChangeNotifierProvider(create: (context) => GameController()),
 
           ],
-          child: GameScreen()),
+          child: MovingBackgroundScreen()),
     );
   }
 }
