@@ -4,6 +4,9 @@ import 'package:hot_air_balloon/main.dart';
 import 'package:hot_air_balloon/res/app_colors.dart';
 import 'package:hot_air_balloon/view/game/hot_air_balloon_app_bar.dart';
 import 'package:hot_air_balloon/view/game_comtorller.dart';
+import 'package:hot_air_balloon/view_model/bet_view_model.dart';
+import 'package:hot_air_balloon/view_model/cancel_bet_view_model.dart';
+import 'package:hot_air_balloon/view_model/update_image_view_model.dart';
 import 'package:provider/provider.dart';
 
 class GameScreen extends StatefulWidget {
@@ -13,7 +16,8 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStateMixin{
+class _GameScreenState extends State<GameScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
@@ -26,12 +30,37 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
       duration: Duration(seconds: 50),
     )..repeat();
 
-    _animation = Tween<double>(begin:0, end: 0.5).animate(_controller);
+    _animation = Tween<double>(begin: 0, end: 0.4).animate(_controller);
+
+    Provider.of<GameController>(context, listen: false).connectToServer();
+    _controller.forward();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final game = Provider.of<GameController>(context);
+
+    if (game.gameData?.status == 2) {
+      _controller.reset(); // Reset animation when status == 2
+    }
+    {
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final game=Provider.of<GameController>(context);
+    final game = Provider.of<GameController>(context);
+    final bet = Provider.of<BetViewModel>(context);
+    final cancelBet = Provider.of<CancelBetViewModel>(context);
+    final updatedImage = Provider.of<UpdateImageViewModel>(context);
     return Scaffold(
       body: Container(
         padding: EdgeInsets.all(8),
@@ -39,12 +68,13 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
         width: width,
         decoration: BoxDecoration(
           gradient: AppColor.appBg,
-         // image: DecorationImage(image: AssetImage("assets/images/bg.png"),fit: BoxFit.fill)
         ),
         child: ListView(
           shrinkWrap: true,
           children: [
-            SizedBox(height: height*0.05,),
+            SizedBox(
+              height: height * 0.05,
+            ),
             HotAirBalloonAppbar(),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -52,71 +82,204 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
                 Container(
                   padding: EdgeInsets.all(3),
                   decoration: BoxDecoration(
-            color: AppColor.black.withOpacity(0.4),
+                    color: AppColor.black.withOpacity(0.4),
                     borderRadius: BorderRadius.circular(5),
                   ),
-                  child: Text("SNo. 1116020805",style: TextStyle(color: AppColor.white,fontSize: 12,fontWeight: FontWeight.w600),),
+                  child: Text(
+                    "SNo.${game.gameData?.period.toString() ?? ""}",
+                    style: TextStyle(
+                        color: AppColor.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600),
+                  ),
                 ),
                 Container(
                   padding: EdgeInsets.all(3),
                   decoration: BoxDecoration(
-            color: AppColor.black.withOpacity(0.4),
+                    color: AppColor.black.withOpacity(0.4),
                     borderRadius: BorderRadius.circular(5),
                   ),
-                  child: Text("All Bet",style: TextStyle(color: AppColor.white,fontSize: 12,fontWeight: FontWeight.w600),),
+                  child: Text(
+                    "All Bet",
+                    style: TextStyle(
+                        color: AppColor.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600),
+                  ),
                 ),
               ],
             ),
-            SizedBox(height: height*0.02,),
+            SizedBox(
+              height: height * 0.02,
+            ),
             expansionWidget(),
-            SizedBox(height: height*0.03,),
+            SizedBox(
+              height: height * 0.03,
+            ),
             Container(
-              height: height*0.5,
-              width: width*0.95,
-              decoration: BoxDecoration(
-
-              ),
+              height: height * 0.5,
+              width: width * 0.95,
+              decoration: BoxDecoration(),
               child: AnimatedBuilder(
                 animation: _animation,
                 builder: (context, child) {
                   return Stack(
                     children: [
                       Positioned(
-                        // top: 0,
-                        top: 100 * _animation.value,
                         left: 0,
                         right: 0,
-                        child: Image.asset(
-                          'assets/images/balloon_bg.png', // Replace with your asset path
+                        child:updatedImage?.updatedImage!=null? Image.network(
+                          updatedImage.updatedImage??"",
                           fit: BoxFit.fill,
-                          height: height*0.5 , // Ensure smooth looping
+                          height: height * 0.5,
+                        ):Image.asset(
+                          Assets.imagesBalloonBg,
+                          fit: BoxFit.fill,
+                          height: height * 0.5,
                         ),
                       ),
-                      Positioned(
-                        // top: -600 * _animation.value,
-                        left: 0,
-                        right: 0,
-                        bottom: 600 * _animation.value ,
-                        child: Center(child: Container(
-                          padding: EdgeInsets.only(bottom: 25),
-                          alignment: Alignment.center,
-                            height: height*0.15,
-                            width: width*0.25,
-                            decoration: BoxDecoration(
-                              // color: AppColor.red,
-                              // gradient: AppColor.appBg,
-                              image: DecorationImage(image: AssetImage(Assets.imagesBalloon),fit: BoxFit.fill)
-                            ),
-                            child:Text("2.2X",style: TextStyle(color: AppColor.white,fontWeight: FontWeight.w600,fontSize: 20),))),
-                      ),
-
+                      game.gameData?.status == 1
+                          ? Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: game.gameData?.status == 1
+                                  ? 600 * _animation.value
+                                  : game.gameData?.status == 2
+                                      ? 0
+                                      : 0,
+                              child: Center(
+                                  child: Container(
+                                padding: EdgeInsets.only(bottom: 25),
+                                alignment: Alignment.center,
+                                height: height * 0.15,
+                                width: width * 0.35,
+                                decoration: BoxDecoration(
+                                    image: DecorationImage(
+                                        image: AssetImage(Assets.imagesBalloonTwo),
+                                        fit: BoxFit.fill)),
+                                child: GradientText(
+                                  text:
+                                      "${game.gameData?.timer.toString() ??""} X",
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    shadows: [
+                                      Shadow(
+                                        offset: Offset(
+                                            3, 1),
+                                        blurRadius: 8.0,
+                                        color: Colors.black,
+                                      ),
+                                    ],
+                                  ),
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      AppColor.white,
+                                      AppColor.white,
+                                      AppColor.white,
+                                    ],
+                                  ),
+                                ),
+                              )))
+                          : game.gameData?.status == 2
+                              ? Container(
+                                  decoration: BoxDecoration(
+                                      image: DecorationImage(
+                                          image:
+                                              AssetImage(Assets.imagesBlasat),
+                                          fit: BoxFit.fill)),
+                                )
+                              : Positioned(
+                                  top: 200,
+                                  left: 40,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      const Center(
+                                          child: GradientText(
+                                        text: "WAITING FOR NEXT ROUND",
+                                        // text: gameController.walletAmount,
+                                        style: TextStyle(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w900,
+                                          shadows: [
+                                            Shadow(
+                                              offset: Offset(5,
+                                                  1), // Creates the 3D effect
+                                              blurRadius: 8.0,
+                                              color: AppColor.gray,
+                                            ),
+                                          ],
+                                        ),
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            AppColor.white, // Gold
+                                            AppColor.white, // Lighter Gold
+                                            AppColor.white,
+                                          ],
+                                        ),
+                                      )),
+                                      const SizedBox(
+                                        height: 10,
+                                      ),
+                                      Container(
+                                        width: 200,
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          border: Border.all(
+                                              color: const Color(0xffea0b3e),
+                                              width: 1),
+                                        ),
+                                        child: LinearProgressIndicator(
+                                          value: (game.gameData?.betTime ?? 0) * 0.01,
+                                          // value: 0.5,
+                                          backgroundColor: Colors.grey,
+                                          valueColor:
+                                              const AlwaysStoppedAnimation<
+                                                  Color>(Color(0xffea0b3e)),
+                                          minHeight: 6,
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        height: 8,
+                                      ),
+                                      GradientText(
+                                        text: '00:${(game.gameData?.betTime ?? 0 * 0.01).toStringAsFixed(1)}',
+                                        // text: gameController.walletAmount,
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w900,
+                                          shadows: [
+                                            Shadow(
+                                              offset: Offset(5,
+                                                  1),
+                                              blurRadius: 8.0,
+                                              color: AppColor.gray,
+                                            ),
+                                          ],
+                                        ),
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            AppColor.white, // Gold
+                                            AppColor.white, // Lighter Gold
+                                            AppColor.white,
+                                          ],
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                )
                     ],
                   );
                 },
               ),
             ),
             Container(
-              margin: EdgeInsets.only(top: height*0.02),
+              margin: EdgeInsets.only(top: height * 0.02),
               width: double.infinity,
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
@@ -127,25 +290,8 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
                   children: [
                     InkWell(
                       onTap: () {
-                        // if (betPlaced.selectedNumbers.isEmpty) {
-                        //   ScaffoldMessenger.of(context).showSnackBar(
-                        //     SnackBar(
-                        //       content: Text(
-                        //           'Please select a number before proceeding!'),
-                        //       duration: Duration(seconds: 2),
-                        //     ),
-                        //   );
-                        // } else {
-                        //   setState(() {
-                            game.toggleBetPlaced();
-                        //   });
-                        // }
-                        // betApi.betPlacedApi(
-                        //     context: context,
-                        //     riskLevel: betPlaced.selectedValue.toString(),
-                        //     selectedNumber: betPlaced.selectedNumbers,
-                        //     betAmount: betPlaced.selectedNumber.toString()
-                        // );
+                        game.betPlaced != true ?  bet.betApi("7", game.selectedNumber.toString(), game.gameData?.period.toString()??"", context):game.betPlaced == true&& game.gameData?.status==1?"CASH OUT" :cancelBet.cancelBetApi(game.gameData?.period.toString()??"", context);
+                        game.toggleBetPlaced();
                       },
                       child: Container(
                         height: height * 0.055,
@@ -153,7 +299,7 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
                           borderRadius: BorderRadius.circular(15),
                           border: Border.all(width: 1, color: Colors.black),
                           color: game.betPlaced != true
-                              ? AppColor.darkGreen
+                              ? AppColor.darkGreen:game.betPlaced == true&& game.gameData?.status==1?AppColor.orange
                               : AppColor.red,
                           boxShadow: const [
                             BoxShadow(
@@ -164,10 +310,9 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
                           ],
                         ),
                         child: Row(
-                          mainAxisAlignment:
-                          MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Icon(
+                            game.betPlaced == true&& game.gameData?.status==1?Container(): Icon(
                               game.betPlaced != true
                                   ? Icons.play_arrow_outlined
                                   : Icons.pause,
@@ -175,16 +320,14 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
                               color: Colors.white,
                             ),
                             Text(
-                              game.betPlaced != true
-                                  ? 'BET'
-                                  : 'CANCEL',
+                              game.betPlaced != true ? 'BET':game.betPlaced == true&& game.gameData?.status==1?"CASH OUT" : 'CANCEL',
                               style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w900,
                                   color: Colors.white),
                             ),
                             SizedBox(
-                              width: width*0.1,
+                              width: width * 0.1,
                             ),
                           ],
                         ),
@@ -196,11 +339,12 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
                       margin: EdgeInsets.symmetric(vertical: height * 0.01),
                       decoration: BoxDecoration(
                         border: Border.all(width: 1, color: Colors.black),
-                        color:  AppColor.darkGreen,
+                        color: AppColor.darkGreen,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.only(top: 5.0, bottom: 5, right: 12, left: 12),
+                        padding: const EdgeInsets.only(
+                            top: 5.0, bottom: 5, right: 12, left: 12),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -215,23 +359,22 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
                                       color: Colors.white),
                                 ),
                                 Container(
-                                  height: height*0.04,
-                                  width: width*0.38,
+                                  height: height * 0.04,
+                                  width: width * 0.38,
                                   decoration: BoxDecoration(
-                                    borderRadius:
-                                    BorderRadius.circular(20),
+                                    borderRadius: BorderRadius.circular(20),
                                     color: AppColor.darkGreen,
                                     border: Border.all(
                                         width: 1, color: Colors.black),
                                   ),
                                   child: Center(
                                       child: Text(
-                                        '${game.selectedNumber}',
-                                        style: const TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w900,
-                                            color: Colors.white),
-                                      )),
+                                    '${game.selectedNumber}',
+                                    style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white),
+                                  )),
                                 ),
                               ],
                             ),
@@ -239,15 +382,13 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
                             InkWell(
                               onTap: game.decrement,
                               child: Container(
-                                  height: height*0.048,
-                                  width: width*0.1,
+                                  height: height * 0.048,
+                                  width: width * 0.1,
                                   margin: const EdgeInsets.all(5),
                                   decoration: BoxDecoration(
-                                      borderRadius:
-                                      BorderRadius.circular(20),
+                                      borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
-                                          width: 0.5,
-                                          color: Colors.black),
+                                          width: 0.5, color: Colors.black),
                                       color: AppColor.green),
                                   child: const Icon(
                                     Icons.remove,
@@ -255,7 +396,6 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
                                     color: Colors.white,
                                   )),
                             ),
-
                             InkWell(
                               onTap: () {
                                 showDialog(
@@ -263,15 +403,14 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
                                     builder: (context) {
                                       return Column(
                                         mainAxisAlignment:
-                                        MainAxisAlignment.end,
+                                            MainAxisAlignment.end,
                                         crossAxisAlignment:
-                                        CrossAxisAlignment.end,
+                                            CrossAxisAlignment.end,
                                         children: [
                                           AlertDialog(
-                                            alignment:
-                                            Alignment.bottomCenter,
+                                            alignment: Alignment.bottomCenter,
                                             backgroundColor:
-                                            const Color(0xff2b7009),
+                                                const Color(0xff2b7009),
                                             content: Column(
                                               children: [
                                                 const Text(
@@ -279,67 +418,57 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
                                                   style: TextStyle(
                                                       fontSize: 14,
                                                       fontWeight:
-                                                      FontWeight
-                                                          .w900,
-                                                      color:
-                                                      Colors.white),
+                                                          FontWeight.w900,
+                                                      color: Colors.white),
                                                 ),
-                                                const SizedBox(
-                                                    height: 20),
+                                                const SizedBox(height: 20),
                                                 Container(
                                                   color:
-                                                  const Color(0xff2b7009),
+                                                      const Color(0xff2b7009),
                                                   height: 100,
-                                                  width:
-                                                  double.maxFinite,
-                                                  child:
-                                                  GridView.builder(
+                                                  width: double.maxFinite,
+                                                  child: GridView.builder(
                                                     shrinkWrap: true,
-                                                    itemCount:10,
+                                                    itemCount: 10,
                                                     // items.length,
                                                     gridDelegate:
-                                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                                        const SliverGridDelegateWithFixedCrossAxisCount(
                                                       crossAxisCount: 3,
-                                                      mainAxisSpacing:
-                                                      10,
-                                                      crossAxisSpacing:
-                                                      10,
-                                                      childAspectRatio:
-                                                      4 / 2,
+                                                      mainAxisSpacing: 10,
+                                                      crossAxisSpacing: 10,
+                                                      childAspectRatio: 4 / 2,
                                                     ),
                                                     itemBuilder:
-                                                        (context,
-                                                        index) {
+                                                        (context, index) {
                                                       final isSelected =
-                                                          game
-                                                              .selectedNumber ==5;
-                                                              // items[
-                                                              // index];
+                                                          game.selectedNumber ==
+                                                              5;
+                                                      // items[
+                                                      // index];
                                                       return InkWell(
                                                         onTap: () {
                                                           setState(() {
-                                                            game.setSelectedNumber(2);
-                                                                // items[
-                                                                // index]);
+                                                            game.setSelectedNumber(
+                                                                2);
+                                                            // items[
+                                                            // index]);
                                                           });
                                                           Navigator.pop(
                                                               context);
                                                         },
-                                                        child:
-                                                        Container(
+                                                        child: Container(
                                                           height: 20,
                                                           width: 40,
                                                           decoration:
-                                                          BoxDecoration(
+                                                              BoxDecoration(
                                                             borderRadius:
-                                                            BorderRadius.circular(
-                                                                10),
-                                                            border:
-                                                            Border
-                                                                .all(
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        10),
+                                                            border: Border.all(
                                                               width: 1,
-                                                              color: Colors
-                                                                  .black,
+                                                              color:
+                                                                  Colors.black,
                                                             ),
                                                             color: const Color(
                                                                 0xff569123),
@@ -347,15 +476,16 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
                                                           child: Center(
                                                             child: Text(
                                                               '${2}',
-                                                              style:
-                                                              TextStyle(
-                                                                fontSize:
-                                                                15,
+                                                              style: TextStyle(
+                                                                fontSize: 15,
                                                                 fontWeight:
-                                                                FontWeight.w900,
+                                                                    FontWeight
+                                                                        .w900,
                                                                 color: isSelected
-                                                                    ? Colors.white
-                                                                    : Colors.black,
+                                                                    ? Colors
+                                                                        .white
+                                                                    : Colors
+                                                                        .black,
                                                               ),
                                                             ),
                                                           ),
@@ -375,36 +505,31 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
                                     });
                               },
                               child: Container(
-                                  height: height*0.048,
-                                  width: width*0.1,
+                                  height: height * 0.048,
+                                  width: width * 0.1,
                                   margin: const EdgeInsets.all(5),
                                   decoration: BoxDecoration(
-                                      borderRadius:
-                                      BorderRadius.circular(20),
+                                      borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
-                                          width: 0.5,
-                                          color: Colors.black),
-                                     color: AppColor.green),
+                                          width: 0.5, color: Colors.black),
+                                      color: AppColor.green),
                                   child: const Icon(
                                     Icons.dynamic_feed_rounded,
                                     size: 20,
                                     color: Colors.white,
                                   )),
                             ),
-
                             InkWell(
                               onTap: game.increment,
                               child: Container(
-                                  height: height*0.048,
-                                  width: width*0.1,
+                                  height: height * 0.048,
+                                  width: width * 0.1,
                                   margin: const EdgeInsets.all(5),
                                   decoration: BoxDecoration(
-                                      borderRadius:
-                                      BorderRadius.circular(20),
+                                      borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
-                                          width: 0.5,
-                                          color: Colors.black),
-                                     color: AppColor.green),
+                                          width: 0.5, color: Colors.black),
+                                      color: AppColor.green),
                                   child: const Icon(
                                     Icons.add,
                                     size: 20,
@@ -424,64 +549,69 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
       ),
     );
   }
+
   Widget expansionWidget() {
-    final game=Provider.of<GameController>(context);
+    final game = Provider.of<GameController>(context);
     return ExpansionTile(
-      collapsedBackgroundColor:Color(0xff262830).withOpacity(0.4),
+      collapsedBackgroundColor: Color(0xff262830).withOpacity(0.4),
+      tilePadding: EdgeInsets.only(left: 5,right: 5),
+      collapsedShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(10))
+      ),
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(10))),
-
       title: game.isExpanded
           ? const Text("Round History",
-          style: TextStyle(fontSize: 14, color: AppColor.black,fontWeight: FontWeight.w600))
+              style: TextStyle(
+                  fontSize: 14,
+                  color: AppColor.black,
+                  fontWeight: FontWeight.w600))
           : Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            height: height * 0.05,
-            width: width,
-            child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: 5,
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (BuildContext context, int index) {
-                  final double price =0.02;
-                  // double.parse(number[index].price.toString());
-                  Color textColor;
-                  if (price > 1 && price < 2) {
-                    textColor = Colors.blue;
-                  } else if (price >= 2 && price < 10) {
-                    textColor = Colors.white;
-                  } else {
-                    textColor = Colors.white;
-                  }
-                  return Container(
-                    // height: height * 0.02,
-                    margin: EdgeInsets.all(8),
-                    padding: EdgeInsets.only(
-                        left: width * 0.02, right: width * 0.02),
-                    decoration:  BoxDecoration(
-                      // color: AppColor.lightCream,
-                      // color: Color(0xff262830).withOpacity(0.6),
-                      color: AppColor.black,
-                      // border: Border.all(
-                      //     color: Colors.grey.withOpacity(0.2)),
-                      borderRadius:
-                      BorderRadius.all(Radius.circular(25)),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '1.01 X',
-                        // '${number[index].price.toStringAsFixed(2)} X',
-                        style:
-                        TextStyle(fontSize: 12, color: textColor),
-                      ),
-                    ),
-                  );
-                }),
-          ),
-        ],
-      ),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: height * 0.04,
+                  width: width,
+                  child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: 5,
+                      scrollDirection: Axis.horizontal,
+                      itemBuilder: (BuildContext context, int index) {
+                        final double price = 0.02;
+                        // double.parse(number[index].price.toString());
+                        Color textColor;
+                        if (price > 1 && price < 2) {
+                          textColor = Colors.blue;
+                        } else if (price >= 2 && price < 10) {
+                          textColor = Colors.white;
+                        } else {
+                          textColor = Colors.white;
+                        }
+                        return Container(
+                          // height: height * 0.02,
+                          margin: EdgeInsets.all(5),
+                          padding: EdgeInsets.only(
+                              left: width * 0.02, right: width * 0.02),
+                          decoration: BoxDecoration(
+                            // color: AppColor.lightCream,
+                            // color: Color(0xff262830).withOpacity(0.6),
+                            color: AppColor.black,
+                            // border: Border.all(
+                            //     color: Colors.grey.withOpacity(0.2)),
+                            borderRadius: BorderRadius.all(Radius.circular(25)),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '1.01 X',
+                              // '${number[index].price.toStringAsFixed(2)} X',
+                              style: TextStyle(fontSize: 10, color: textColor),
+                            ),
+                          ),
+                        );
+                      }),
+                ),
+              ],
+            ),
       onExpansionChanged: (value) {
         game.setIsExpanded(value);
       },
@@ -495,12 +625,13 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
         ),
         child: Row(
           mainAxisAlignment:
-          MainAxisAlignment.center, // Align icons in the center
+              MainAxisAlignment.center, // Align icons in the center
           children: [
             Icon(
               Icons.history,
               size: 18,
-              color: !game.isExpanded ? Colors.grey.withOpacity(0.8) : Colors.pink,
+              color:
+                  !game.isExpanded ? Colors.grey.withOpacity(0.8) : Colors.pink,
             ),
             Padding(
               padding: const EdgeInsets.only(bottom: 0.0),
@@ -509,8 +640,9 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
                     ? Icons.arrow_drop_up_rounded
                     : Icons.arrow_drop_down_rounded,
                 size: 30,
-                color:
-                !game.isExpanded ? Colors.grey.withOpacity(0.8) : Colors.pink,
+                color: !game.isExpanded
+                    ? Colors.grey.withOpacity(0.8)
+                    : Colors.pink,
               ),
             ),
           ],
@@ -518,7 +650,7 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
       ),
       children: [
         Container(
-          decoration:  BoxDecoration(
+          decoration: BoxDecoration(
               color: Color(0xff262830).withOpacity(0.6),
               borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(10),
@@ -548,7 +680,7 @@ class _GameScreenState extends State<GameScreen>   with SingleTickerProviderStat
                 child: Container(
                   height: height * 0.02,
                   padding:
-                  EdgeInsets.only(left: width * 0.02, right: width * 0.02),
+                      EdgeInsets.only(left: width * 0.02, right: width * 0.02),
                   decoration: const BoxDecoration(
                     color: Color(0xff080808),
                     borderRadius: BorderRadius.all(Radius.circular(25)),

@@ -1,0 +1,22 @@
+import 'package:flutter/foundation.dart';
+import 'package:hot_air_balloon/model/image_list_model.dart';
+import 'package:hot_air_balloon/res/api_url.dart';
+import '../helper/network/base_api_services.dart';
+import '../helper/network/network_api_services.dart';
+
+class ImageListRepo {
+  final BaseApiServices _apiServices = NetworkApiServices();
+
+  Future<ImageListModel> imageListApi() async {
+    try {
+      dynamic response = await _apiServices
+          .getGetApiResponse(ApiUrl.imageListApi);
+      return ImageListModel.fromJson(response);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error occurred during imageListApi: $e');
+      }
+      rethrow;
+    }
+  }
+}

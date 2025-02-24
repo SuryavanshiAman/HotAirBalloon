@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hot_air_balloon/main.dart';
+import 'package:hot_air_balloon/view/background_change_screen.dart';
 
 import 'game_history.dart';
 import 'how_to_play.dart';
@@ -27,7 +28,7 @@ class _KinoMenuBarState extends State<KinoMenuBar> {
           padding:  EdgeInsets.only(top: height*0.045,right: width*0.02,),
           child: Container(
             width: width*0.5,
-            height: height*0.26,
+            height: height*0.33,
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(10),
               color: Colors.grey.shade900,
             ),
@@ -51,7 +52,20 @@ class _KinoMenuBarState extends State<KinoMenuBar> {
                     },
                   ),
                 ),
-
+                MenuItem(
+                  icon: Icons.history,
+                  label: 'Change Bg',
+                  onTap: () {
+                    // Navigator.push(context, MaterialPageRoute(builder: (context)=>BackgroundScreen()));
+                    showDialog(
+                      context: context,
+                      barrierDismissible: true, // Dismiss when tapping outside
+                      builder: (BuildContext context) {
+                        return const BackgroundScreen();
+                      },
+                    );
+                  },
+                ),
                 MenuItem(
                   icon: Icons.history,
                   label: 'Game History',
@@ -60,7 +74,7 @@ class _KinoMenuBarState extends State<KinoMenuBar> {
                       context: context,
                       barrierDismissible: true, // Dismiss when tapping outside
                       builder: (BuildContext context) {
-                        return const KinoGameHistory();
+                        return const BalloonGameHistory();
                       },
                     );
                   },

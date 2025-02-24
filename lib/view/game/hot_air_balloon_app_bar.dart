@@ -25,7 +25,7 @@ class _HotAirBallonAppbarState extends State<HotAirBalloonAppbar> {
       margin: EdgeInsets.only(bottom: 12),
       width: double.infinity,
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(10),
           color: AppColor.black.withOpacity(0.4),
       ),
       child: Padding(
