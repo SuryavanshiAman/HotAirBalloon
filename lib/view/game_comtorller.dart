@@ -1,6 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
-
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hot_air_balloon/model/game_model.dart';
@@ -8,6 +7,22 @@ import 'package:hot_air_balloon/res/app_colors.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class GameController with ChangeNotifier {
+  int? _nextPeriod;
+
+  int? get nextPeriod => _nextPeriod;
+
+  setNextPeriod(int? value) {
+    _nextPeriod = value;
+    notifyListeners();
+  }
+  int _button1=0;
+
+  int get button1 => _button1;
+
+  setButton1(int value) {
+    _button1 = value;
+    notifyListeners();
+  }
   bool _isExpanded = false;
 
   bool get isExpanded => _isExpanded;
@@ -226,7 +241,14 @@ class GameController with ChangeNotifier {
     _timeData = value;
     notifyListeners();
   }
+bool _blast =false;
 
+  bool get blast => _blast;
+
+  setBlast(bool value) {
+    _blast = value;
+    notifyListeners();
+  }
   int _selectedIndex = 0;
 
   int get selectedIndex => _selectedIndex;
@@ -254,6 +276,7 @@ class GameController with ChangeNotifier {
         print("Socket connected successfully");
       }
     });
+
     _socket.onConnectError((data) {
       if (kDebugMode) {
         print("Socket not connected ");
@@ -263,6 +286,16 @@ class GameController with ChangeNotifier {
       receiveData = jsonDecode(data);
       setGameData(GameModel.fromJson(receiveData));
       gameData?.status==2?setBetPlaced(false):null;
+      gameData?.status==2?playAudio():stopAudio();
+      gameData?.status==2?playAudio():stopAudio();
+      gameData?.status==1?setBlast(false):null;
+      button1==2&&gameData?.status==1?setButton1(1):null;
+      gameData?.status==0&& nextPeriod==gameData?.period?setButton1(2):null;
+      gameData?.status==1&& nextPeriod==gameData?.period?setButton1(1):null;
+      gameData?.status==2?setButton1(0):null;
+
+
+
       // setTimeData(receiveData['timerBetTime']);
       // selectedIndex == 0
       //     ? setTimeData(receiveData['timerBetTime'])
@@ -276,7 +309,23 @@ class GameController with ChangeNotifier {
     });
     _socket.connect();
   }
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
+  Future<void> playAudio() async {
+    blast==false?
+    await _audioPlayer.play(AssetSource("sound/blast.mp3")):null;
+    Future.delayed(Duration(seconds: 1),(){
+      setBlast(true);
+    });
+
+  }
+
+  Future<void> stopAudio() async {
+    await _audioPlayer.stop();
+  }
+  Future<void> disposeAudio() async {
+    await _audioPlayer.dispose();
+  }
   String formatTime(int seconds, int position) {
     final Duration duration = Duration(seconds: seconds);
     final int minutes = duration.inMinutes;
@@ -287,14 +336,14 @@ class GameController with ChangeNotifier {
         : remainingSeconds.toString().padLeft(2, '0');
   }
 
-  // void disConnectToServer(context) async {
-  //   _socket.disconnect();
-  //   _socket.clearListeners();
-  //   _socket.close();
-  //   if (kDebugMode) {
-  //     print('SOCKET DISCONNECT');
-  //   }
-  // }
+  void disConnectToServer(context) async {
+    _socket.disconnect();
+    _socket.clearListeners();
+    _socket.close();
+    if (kDebugMode) {
+      print('SOCKET DISCONNECT');
+    }
+  }
 
   void toggleBetPlaced() {
     _betPlaced = !_betPlaced;

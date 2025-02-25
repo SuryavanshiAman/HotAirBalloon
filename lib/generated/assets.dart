@@ -7,5 +7,6 @@ class Assets {
   static const String imagesBalloonTwo = 'assets/images/balloon_two.gif';
   static const String imagesBg = 'assets/images/bg.png';
   static const String imagesBlasat = 'assets/images/blasat.gif';
+  static const String soundBlast = 'assets/sound/blast.mp3';
 
 }

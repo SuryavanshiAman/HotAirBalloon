@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:hot_air_balloon/repo/bet_repo.dart';
 import 'package:hot_air_balloon/res/app_colors.dart';
 import 'package:hot_air_balloon/utils/utils.dart';
+import 'package:hot_air_balloon/view/game_comtorller.dart';
 import 'package:provider/provider.dart';
 
 class BetViewModel with ChangeNotifier {
@@ -19,21 +20,25 @@ class BetViewModel with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> betApi(dynamic number,dynamic amount,dynamic srNo ,context) async {
-    // UserViewModel userViewModal = UserViewModel();
-    // String? userId = await userViewModal.getUser();
+  Future<void> betApi(dynamic number,dynamic amount,dynamic srNo,dynamic type,context) async {
+    final game = Provider.of<GameController>(context,listen: false);
+    type=="2"?game.setNextPeriod(srNo):null;
+    print("${number}");
+    print("${srNo}");
     setLoading(true);
     Map data={
       "uid" : "4",
-      "number" : number,
-      "amount" : amount,
+      "number" : number.toString(),
+      "amount" : amount.toString(),
       "game_id" : "27",
-      "game_sr_num" : srNo
+      "game_sr_num" : srNo.toString()
     };
     _betRepo.betApi(data).then((value) {
       if (value['status'] == 200) {
         setLoading(false);
        Utils.setSnackBar(value['message'], AppColor.green, context);
+        game.gameData?.status==0? game.setButton1(2):null;
+        game.gameData?.status==1? game.setButton1(3):null;
       }
       else {
         setLoading(false);

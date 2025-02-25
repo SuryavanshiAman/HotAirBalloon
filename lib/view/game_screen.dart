@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:hot_air_balloon/generated/assets.dart';
 import 'package:hot_air_balloon/main.dart';
@@ -17,14 +18,14 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _controller;
   late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
-
+    WidgetsBinding.instance.addObserver(this);
     _controller = AnimationController(
       vsync: this,
       duration: Duration(seconds: 50),
@@ -49,10 +50,28 @@ class _GameScreenState extends State<GameScreen>
     }
   }
 
+  final AudioPlayer audioPlayer = AudioPlayer();
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    audioPlayer.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final game = Provider.of<GameController>(context, listen: false);
+    print("Aman: ${state}");
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      // game.disposeAudio();
+      game.disConnectToServer(context);
+    }
+    if (state == AppLifecycleState.resumed) {
+      game.connectToServer();
+      print("Amanioooo");
+    }
   }
 
   @override
@@ -128,15 +147,17 @@ class _GameScreenState extends State<GameScreen>
                       Positioned(
                         left: 0,
                         right: 0,
-                        child:updatedImage?.updatedImage!=null? Image.network(
-                          updatedImage.updatedImage??"",
-                          fit: BoxFit.fill,
-                          height: height * 0.5,
-                        ):Image.asset(
-                          Assets.imagesBalloonBg,
-                          fit: BoxFit.fill,
-                          height: height * 0.5,
-                        ),
+                        child: updatedImage.updatedImage != null
+                            ? Image.network(
+                                updatedImage.updatedImage ?? "",
+                                fit: BoxFit.fill,
+                                height: height * 0.5,
+                              )
+                            : Image.asset(
+                                Assets.imagesBalloonBg,
+                                fit: BoxFit.fill,
+                                height: height * 0.5,
+                              ),
                       ),
                       game.gameData?.status == 1
                           ? Positioned(
@@ -155,18 +176,18 @@ class _GameScreenState extends State<GameScreen>
                                 width: width * 0.35,
                                 decoration: BoxDecoration(
                                     image: DecorationImage(
-                                        image: AssetImage(Assets.imagesBalloonTwo),
+                                        image:
+                                            AssetImage(Assets.imagesBalloonTwo),
                                         fit: BoxFit.fill)),
                                 child: GradientText(
                                   text:
-                                      "${game.gameData?.timer.toString() ??""} X",
+                                      "${game.gameData?.timer.toString() ?? ""} X",
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w600,
                                     shadows: [
                                       Shadow(
-                                        offset: Offset(
-                                            3, 1),
+                                        offset: Offset(3, 1),
                                         blurRadius: 8.0,
                                         color: Colors.black,
                                       ),
@@ -181,7 +202,7 @@ class _GameScreenState extends State<GameScreen>
                                   ),
                                 ),
                               )))
-                          : game.gameData?.status == 2
+                          : game.gameData?.status == 2 && game.blast == false
                               ? Container(
                                   decoration: BoxDecoration(
                                       image: DecorationImage(
@@ -189,17 +210,14 @@ class _GameScreenState extends State<GameScreen>
                                               AssetImage(Assets.imagesBlasat),
                                           fit: BoxFit.fill)),
                                 )
-                              : Positioned(
-                                  top: 200,
-                                  left: 40,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      const Center(
+                              : game.gameData?.status == 2
+                                  ? Positioned(
+                                      top: 250,
+                                      left: 40,
+                                      child: Center(
                                           child: GradientText(
-                                        text: "WAITING FOR NEXT ROUND",
-                                        // text: gameController.walletAmount,
+                                        text:
+                                            "Balloon has burst ${game.gameData?.timer.toString() ?? ""} X",
                                         style: TextStyle(
                                           fontSize: 22,
                                           fontWeight: FontWeight.w900,
@@ -220,59 +238,94 @@ class _GameScreenState extends State<GameScreen>
                                           ],
                                         ),
                                       )),
-                                      const SizedBox(
-                                        height: 10,
-                                      ),
-                                      Container(
-                                        width: 200,
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                          border: Border.all(
-                                              color: const Color(0xffea0b3e),
-                                              width: 1),
-                                        ),
-                                        child: LinearProgressIndicator(
-                                          value: (game.gameData?.betTime ?? 0) * 0.01,
-                                          // value: 0.5,
-                                          backgroundColor: Colors.grey,
-                                          valueColor:
-                                              const AlwaysStoppedAnimation<
-                                                  Color>(Color(0xffea0b3e)),
-                                          minHeight: 6,
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                      const SizedBox(
-                                        height: 8,
-                                      ),
-                                      GradientText(
-                                        text: '00:${(game.gameData?.betTime ?? 0 * 0.01).toStringAsFixed(1)}',
-                                        // text: gameController.walletAmount,
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w900,
-                                          shadows: [
-                                            Shadow(
-                                              offset: Offset(5,
-                                                  1),
-                                              blurRadius: 8.0,
-                                              color: AppColor.gray,
+                                    )
+                                  : Positioned(
+                                      top: 200,
+                                      left: 40,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          const Center(
+                                              child: GradientText(
+                                            text: "WAITING FOR NEXT ROUND",
+                                            // text: gameController.walletAmount,
+                                            style: TextStyle(
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.w900,
+                                              shadows: [
+                                                Shadow(
+                                                  offset: Offset(5,
+                                                      1), // Creates the 3D effect
+                                                  blurRadius: 8.0,
+                                                  color: AppColor.gray,
+                                                ),
+                                              ],
                                             ),
-                                          ],
-                                        ),
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            AppColor.white, // Gold
-                                            AppColor.white, // Lighter Gold
-                                            AppColor.white,
-                                          ],
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                )
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                AppColor.white, // Gold
+                                                AppColor.white, // Lighter Gold
+                                                AppColor.white,
+                                              ],
+                                            ),
+                                          )),
+                                          const SizedBox(
+                                            height: 10,
+                                          ),
+                                          Container(
+                                            width: 200,
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              border: Border.all(
+                                                  color:
+                                                      const Color(0xffea0b3e),
+                                                  width: 1),
+                                            ),
+                                            child: LinearProgressIndicator(
+                                              value: (game.gameData?.betTime ??
+                                                      0) *
+                                                  0.01,
+                                              // value: 0.5,
+                                              backgroundColor: Colors.grey,
+                                              valueColor:
+                                                  const AlwaysStoppedAnimation<
+                                                      Color>(Color(0xffea0b3e)),
+                                              minHeight: 6,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                          const SizedBox(
+                                            height: 8,
+                                          ),
+                                          GradientText(
+                                            text:
+                                                '00:${(game.gameData?.betTime ?? 0 * 0.01).toStringAsFixed(1)}',
+                                            // text: gameController.walletAmount,
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w900,
+                                              shadows: [
+                                                Shadow(
+                                                  offset: Offset(5, 1),
+                                                  blurRadius: 8.0,
+                                                  color: AppColor.gray,
+                                                ),
+                                              ],
+                                            ),
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                AppColor.white, // Gold
+                                                AppColor.white, // Lighter Gold
+                                                AppColor.white,
+                                              ],
+                                            ),
+                                          )
+                                        ],
+                                      ),
+                                    )
                     ],
                   );
                 },
@@ -288,51 +341,74 @@ class _GameScreenState extends State<GameScreen>
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
                   children: [
-                    InkWell(
-                      onTap: () {
-                        game.betPlaced != true ?  bet.betApi("7", game.selectedNumber.toString(), game.gameData?.period.toString()??"", context):game.betPlaced == true&& game.gameData?.status==1?"CASH OUT" :cancelBet.cancelBetApi(game.gameData?.period.toString()??"", context);
-                        game.toggleBetPlaced();
-                      },
-                      child: Container(
-                        height: height * 0.055,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                          border: Border.all(width: 1, color: Colors.black),
-                          color: game.betPlaced != true
-                              ? AppColor.darkGreen:game.betPlaced == true&& game.gameData?.status==1?AppColor.orange
-                              : AppColor.red,
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black54,
-                              blurRadius: 8,
-                              offset: Offset(2, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            game.betPlaced == true&& game.gameData?.status==1?Container(): Icon(
-                              game.betPlaced != true
-                                  ? Icons.play_arrow_outlined
-                                  : Icons.pause,
-                              size: 40,
-                              color: Colors.white,
-                            ),
-                            Text(
-                              game.betPlaced != true ? 'BET':game.betPlaced == true&& game.gameData?.status==1?"CASH OUT" : 'CANCEL',
-                              style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.white),
-                            ),
-                            SizedBox(
-                              width: width * 0.1,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    // InkWell(
+                    //   onTap: () {
+                    //     game.gameData?.status==0?bet.betApi("7", game.selectedNumber.toString(),
+                    //         game.gameData?.period.toString() ?? "", context):bet.betApi("7", game.selectedNumber.toString(),
+                    //         game.gameData?.period??0+1, context);
+                    //     // game.betPlaced != true && game.gameData?.status == 0
+                    //     //     ? bet.betApi("7", game.selectedNumber.toString(),
+                    //     //         game.gameData?.period.toString() ?? "", context)
+                    //     //     : game.betPlaced == true &&
+                    //     //             game.gameData?.status == 1
+                    //     //         ? "CASH OUT"
+                    //     //         : cancelBet.cancelBetApi(
+                    //     //             game.gameData?.period.toString() ?? "",
+                    //     //             context);
+                    //     // game.toggleBetPlaced();
+                    //   },
+                    //   child: Container(
+                    //     height: height * 0.055,
+                    //     decoration: BoxDecoration(
+                    //       borderRadius: BorderRadius.circular(15),
+                    //       border: Border.all(width: 1, color: Colors.black),
+                    //       color: AppColor.darkGreen,
+                    //       // game.betPlaced != true
+                    //       //     ? AppColor.darkGreen
+                    //       //     : game.betPlaced == true &&
+                    //       //             game.gameData?.status == 1
+                    //       //         ? AppColor.orange
+                    //       //         : AppColor.red,
+                    //       boxShadow: const [
+                    //         BoxShadow(
+                    //           color: Colors.black54,
+                    //           blurRadius: 8,
+                    //           offset: Offset(2, 2),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //     child: Row(
+                    //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //       children: [
+                    //         game.betPlaced == true && game.gameData?.status == 1
+                    //             ? Container()
+                    //             : Icon(
+                    //                 game.betPlaced != true
+                    //                     ? Icons.play_arrow_outlined
+                    //                     : Icons.pause,
+                    //                 size: 40,
+                    //                 color: Colors.white,
+                    //               ),
+                    //         Text("BET",
+                    //           // game.betPlaced != true
+                    //           //     ? 'BET'
+                    //           //     : game.betPlaced == true &&
+                    //           //             game.gameData?.status == 1
+                    //           //         ? "CASH OUT"
+                    //           //         : 'CANCEL',
+                    //           style: const TextStyle(
+                    //               fontSize: 20,
+                    //               fontWeight: FontWeight.w900,
+                    //               color: Colors.white),
+                    //         ),
+                    //         SizedBox(
+                    //           width: width * 0.1,
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
+                    // ),
+                    button(),
                     Container(
                       height: height * 0.08,
                       width: double.infinity,
@@ -549,15 +625,186 @@ class _GameScreenState extends State<GameScreen>
       ),
     );
   }
+  int button1=0;
+Widget button(){
+  final game = Provider.of<GameController>(context);
+  final bet = Provider.of<BetViewModel>(context);
+  final cancelBet = Provider.of<CancelBetViewModel>(context);
+    return  game.button1==0? InkWell(
+      onTap: () {
+        print((game.gameData?.period??0)+1);
+        game.gameData?.status==0?bet.betApi("7", game.selectedNumber.toString(), game.gameData?.period.toString() ?? "","1", context):
+        bet.betApi("8", game.selectedNumber.toString(), (game.gameData?.period??0)+1,"2", context);
 
+
+
+      },
+      child: Container(
+        height: height * 0.055,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(width: 1, color: Colors.black),
+          color: AppColor.darkGreen,
+          // game.betPlaced != true
+          //     ? AppColor.darkGreen
+          //     : game.betPlaced == true &&
+          //             game.gameData?.status == 1
+          //         ? AppColor.orange
+          //         : AppColor.red,
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black54,
+              blurRadius: 8,
+              offset: Offset(2, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            game.betPlaced == true && game.gameData?.status == 1
+                ? Container()
+                : Icon(
+              game.betPlaced != true
+                  ? Icons.play_arrow_outlined
+                  : Icons.pause,
+              size: 40,
+              color: Colors.white,
+            ),
+            Text("BET",
+              // game.betPlaced != true
+              //     ? 'BET'
+              //     : game.betPlaced == true &&
+              //             game.gameData?.status == 1
+              //         ? "CASH OUT"
+              //         : 'CANCEL',
+              style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white),
+            ),
+            SizedBox(
+              width: width * 0.1,
+            ),
+          ],
+        ),
+      ),
+    ):
+    game.button1==1? InkWell(
+      onTap: () {
+        game.setButton1(0);
+        game.setNextPeriod(0);
+   /// cash out
+      },
+      child: Container(
+        height: height * 0.055,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(width: 1, color: Colors.black),
+          color: AppColor.orange,
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black54,
+              blurRadius: 8,
+              offset: Offset(2, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+           Icon(Icons.pause,
+              size: 40,
+              color: Colors.white,
+            ),
+            Text("Cash out",
+              // game.betPlaced != true
+              //     ? 'BET'
+              //     : game.betPlaced == true &&
+              //             game.gameData?.status == 1
+              //         ? "CASH OUT"
+              //         : 'CANCEL',
+              style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white),
+            ),
+            Text("${game.gameData?.timer.toString()??" "} X",
+              // game.betPlaced != true
+              //     ? 'BET'
+              //     : game.betPlaced == true &&
+              //             game.gameData?.status == 1
+              //         ? "CASH OUT"
+              //         : 'CANCEL',
+              style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white),
+            ),
+            SizedBox(
+              width: width * 0.1,
+            ),
+          ],
+        ),
+      ),
+    )
+        :InkWell(
+      onTap: () {
+        /// cancel
+        cancelBet.cancelBetApi(
+            game.gameData?.period.toString() ?? "",
+            context);
+        game.setButton1(0);
+        game.setNextPeriod(0);
+      },
+      child: Container(
+        height: height * 0.055,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(width: 1, color: Colors.black),
+          color: AppColor.red,
+          // game.betPlaced != true
+          //     ? AppColor.darkGreen
+          //     : game.betPlaced == true &&
+          //             game.gameData?.status == 1
+          //         ? AppColor.orange
+          //         : AppColor.red,
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black54,
+              blurRadius: 8,
+              offset: Offset(2, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Icon(Icons.pause,
+              size: 40,
+              color: Colors.white,
+            ),
+            Text("Cancel",
+              style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white),
+            ),
+            SizedBox(
+              width: width * 0.1,
+            ),
+          ],
+        ),
+      ),
+    );
+}
   Widget expansionWidget() {
     final game = Provider.of<GameController>(context);
     return ExpansionTile(
       collapsedBackgroundColor: Color(0xff262830).withOpacity(0.4),
-      tilePadding: EdgeInsets.only(left: 5,right: 5),
+      tilePadding: EdgeInsets.only(left: 5, right: 5),
       collapsedShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(10))
-      ),
+          borderRadius: BorderRadius.all(Radius.circular(10))),
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(10))),
       title: game.isExpanded
