@@ -4,9 +4,21 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hot_air_balloon/model/game_model.dart';
 import 'package:hot_air_balloon/res/app_colors.dart';
+import 'package:provider/provider.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
+import '../view_model/five_result_view_model.dart';
+
 class GameController with ChangeNotifier {
+  List<int> amountList = [10, 20, 30, 40,50,60,70,80,90,100];
+  bool _sound = true;
+
+  bool get sound => _sound;
+
+  setSound(bool value) {
+    _sound = value;
+    notifyListeners();
+  }
   int? _nextPeriod;
 
   int? get nextPeriod => _nextPeriod;
@@ -257,7 +269,13 @@ bool _blast =false;
     _selectedIndex = value;
     notifyListeners();
   }
+bool _lastResult=false;
 
+  bool get lastResult => _lastResult;
+
+  setLastResult(bool value) {
+    _lastResult = value;
+  }
   late IO.Socket _socket;
   dynamic receiveData = {};
   GameModel ?_gameData;
@@ -266,9 +284,9 @@ bool _blast =false;
     _gameData=value;
     notifyListeners();
   }
-  void connectToServer() {
+  void connectToServer(context) {
     _socket = IO.io(
-      "https://aviatorudaan.com/",
+      "https://aviatorudaan.com",
       IO.OptionBuilder().setTransports(['websocket']).build(),
     );
     _socket.on('connect', (_) {
@@ -282,30 +300,21 @@ bool _blast =false;
         print("Socket not connected ");
       }
     });
-    _socket.on("xgameaviator", (data) {
+    _socket.on("baloon", (data) {
+      // print(sound);
       receiveData = jsonDecode(data);
       setGameData(GameModel.fromJson(receiveData));
       gameData?.status==2?setBetPlaced(false):null;
-      gameData?.status==2?playAudio():stopAudio();
-      gameData?.status==2?playAudio():stopAudio();
+      gameData?.status==2&&sound==true?playAudio():stopAudio();
+      // gameData?.status==2?playAudio():stopAudio();
       gameData?.status==1?setBlast(false):null;
       button1==2&&gameData?.status==1?setButton1(1):null;
       gameData?.status==0&& nextPeriod==gameData?.period?setButton1(2):null;
       gameData?.status==1&& nextPeriod==gameData?.period?setButton1(1):null;
       gameData?.status==2?setButton1(0):null;
-
-
-
-      // setTimeData(receiveData['timerBetTime']);
-      // selectedIndex == 0
-      //     ? setTimeData(receiveData['timerBetTime'])
-      //     : selectedIndex == 1
-      //         ? setTimeData(receiveData['oneMinTimer'])
-      //         : selectedIndex == 2
-      //             ? setTimeData(receiveData['threeMinTimer'])
-      //             : selectedIndex == 3
-      //                 ? setTimeData(receiveData['fiveMinTimer'])
-      //                 : setTimeData(receiveData['tenMinTimer']);
+      lastResult==false?
+      gameData?.status == 2 ?Provider.of<LastFiveResultViewModel>(context,listen: false).lastFiveResultApi(context): null:null;
+      gameData?.status==0?setLastResult(false):null;
     });
     _socket.connect();
   }

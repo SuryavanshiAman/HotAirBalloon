@@ -49,6 +49,8 @@ class _BackgroundScreenState extends State<BackgroundScreen> {
                       selectedIndex = index;
                     });
                     updateImage.updateImageApi(context,data?.id,);
+                    Navigator.pop(context);
+                    Navigator.pop(context);
                   },
                   child: Container(
                     decoration: BoxDecoration(

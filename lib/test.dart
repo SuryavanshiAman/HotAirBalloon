@@ -22,7 +22,7 @@ class _MovingBackgroundScreenState extends State<MovingBackgroundScreen>
   void initState() {
     super.initState();
 final game=Provider.of<GameController>(context,listen: false);
-game.connectToServer();
+game.connectToServer(context);
   }
 List<String>text=[
   "0",

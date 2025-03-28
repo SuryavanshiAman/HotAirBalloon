@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hot_air_balloon/main.dart';
+import 'package:hot_air_balloon/res/switch.dart';
 import 'package:hot_air_balloon/view/background_change_screen.dart';
+import 'package:provider/provider.dart';
 
+import '../game_comtorller.dart';
 import 'game_history.dart';
 import 'how_to_play.dart';
 
@@ -15,11 +18,12 @@ class KinoMenuBar extends StatefulWidget {
 
 class _KinoMenuBarState extends State<KinoMenuBar> {
 
-  bool light0 = true;
+
 
 
   @override
   Widget build(BuildContext context) {
+    final game =Provider.of<GameController>(context);
     return  Align(
       alignment: Alignment.topRight,
       child: Material(
@@ -41,16 +45,41 @@ class _KinoMenuBarState extends State<KinoMenuBar> {
                   onTap: () {
                     Navigator.pop(context);
                   },
-                  actionIcon:  Switch(
-                    value: light0,
-                    focusColor: Colors.white,
-                    hoverColor:Colors.white,
-                    onChanged: (bool value) {
+                  actionIcon:  CustomSwitch(
+                    width: width * 0.09,
+                    height: height * 0.022,
+                    toggleSize: height * 0.015,
+                    value: game.sound,
+                    borderRadius: 20.0,
+                    padding: 2.0,
+                    toggleColor: Colors.white,
+                    switchBorder: Border.all(
+                      color: Colors.grey,
+                      width: 1.0,
+                    ),
+                    toggleBorder: Border.all(
+                      color: Colors.white,
+                      width: 2.0,
+                    ),
+                    activeColor: Colors.green,
+                    inactiveColor: Colors.grey.withOpacity(0.2),
+                    onToggle: (bool value) {
                       setState(() {
-                        light0 = value;
+                        game.setSound(value);
+                        print(game.sound);
                       });
                     },
                   ),
+                  // Switch(
+                  //   value: light0,
+                  //   focusColor: Colors.white,
+                  //   hoverColor:Colors.white,
+                  //   onChanged: (bool value) {
+                  //     setState(() {
+                  //       light0 = value;
+                  //     });
+                  //   },
+                  // ),
                 ),
                 MenuItem(
                   icon: Icons.history,

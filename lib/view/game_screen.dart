@@ -7,8 +7,11 @@ import 'package:hot_air_balloon/view/game/hot_air_balloon_app_bar.dart';
 import 'package:hot_air_balloon/view/game_comtorller.dart';
 import 'package:hot_air_balloon/view_model/bet_view_model.dart';
 import 'package:hot_air_balloon/view_model/cancel_bet_view_model.dart';
+import 'package:hot_air_balloon/view_model/cash_out_view_model.dart';
 import 'package:hot_air_balloon/view_model/update_image_view_model.dart';
 import 'package:provider/provider.dart';
+
+import '../view_model/five_result_view_model.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -30,10 +33,9 @@ class _GameScreenState extends State<GameScreen>
       vsync: this,
       duration: Duration(seconds: 50),
     )..repeat();
-
     _animation = Tween<double>(begin: 0, end: 0.4).animate(_controller);
-
-    Provider.of<GameController>(context, listen: false).connectToServer();
+    Provider.of<GameController>(context, listen: false).connectToServer(context);
+    Provider.of<LastFiveResultViewModel>(context,listen: false).lastFiveResultApi(context);
     _controller.forward();
   }
 
@@ -69,7 +71,7 @@ class _GameScreenState extends State<GameScreen>
       game.disConnectToServer(context);
     }
     if (state == AppLifecycleState.resumed) {
-      game.connectToServer();
+      game.connectToServer(context);
       print("Amanioooo");
     }
   }
@@ -341,73 +343,12 @@ class _GameScreenState extends State<GameScreen>
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
                   children: [
-                    // InkWell(
-                    //   onTap: () {
-                    //     game.gameData?.status==0?bet.betApi("7", game.selectedNumber.toString(),
-                    //         game.gameData?.period.toString() ?? "", context):bet.betApi("7", game.selectedNumber.toString(),
-                    //         game.gameData?.period??0+1, context);
-                    //     // game.betPlaced != true && game.gameData?.status == 0
-                    //     //     ? bet.betApi("7", game.selectedNumber.toString(),
-                    //     //         game.gameData?.period.toString() ?? "", context)
-                    //     //     : game.betPlaced == true &&
-                    //     //             game.gameData?.status == 1
-                    //     //         ? "CASH OUT"
-                    //     //         : cancelBet.cancelBetApi(
-                    //     //             game.gameData?.period.toString() ?? "",
-                    //     //             context);
-                    //     // game.toggleBetPlaced();
-                    //   },
-                    //   child: Container(
-                    //     height: height * 0.055,
-                    //     decoration: BoxDecoration(
-                    //       borderRadius: BorderRadius.circular(15),
-                    //       border: Border.all(width: 1, color: Colors.black),
-                    //       color: AppColor.darkGreen,
-                    //       // game.betPlaced != true
-                    //       //     ? AppColor.darkGreen
-                    //       //     : game.betPlaced == true &&
-                    //       //             game.gameData?.status == 1
-                    //       //         ? AppColor.orange
-                    //       //         : AppColor.red,
-                    //       boxShadow: const [
-                    //         BoxShadow(
-                    //           color: Colors.black54,
-                    //           blurRadius: 8,
-                    //           offset: Offset(2, 2),
-                    //         ),
-                    //       ],
-                    //     ),
-                    //     child: Row(
-                    //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    //       children: [
-                    //         game.betPlaced == true && game.gameData?.status == 1
-                    //             ? Container()
-                    //             : Icon(
-                    //                 game.betPlaced != true
-                    //                     ? Icons.play_arrow_outlined
-                    //                     : Icons.pause,
-                    //                 size: 40,
-                    //                 color: Colors.white,
-                    //               ),
-                    //         Text("BET",
-                    //           // game.betPlaced != true
-                    //           //     ? 'BET'
-                    //           //     : game.betPlaced == true &&
-                    //           //             game.gameData?.status == 1
-                    //           //         ? "CASH OUT"
-                    //           //         : 'CANCEL',
-                    //           style: const TextStyle(
-                    //               fontSize: 20,
-                    //               fontWeight: FontWeight.w900,
-                    //               color: Colors.white),
-                    //         ),
-                    //         SizedBox(
-                    //           width: width * 0.1,
-                    //         ),
-                    //       ],
-                    //     ),
-                    //   ),
-                    // ),
+                    game.gameData?.status!=0 &&game.button1==2||game.button1==3?  Text(
+                      "Waiting for next round",
+                      style:
+                      TextStyle(color: AppColor.white, fontSize: 14,fontWeight: FontWeight.w500),
+                    ):Container(),
+                    SizedBox(height: height*0.02,),
                     button(),
                     Container(
                       height: height * 0.08,
@@ -524,8 +465,7 @@ class _GameScreenState extends State<GameScreen>
                                                       return InkWell(
                                                         onTap: () {
                                                           setState(() {
-                                                            game.setSelectedNumber(
-                                                                2);
+                                                            game.setSelectedNumber(game.amountList[index]);
                                                             // items[
                                                             // index]);
                                                           });
@@ -551,7 +491,7 @@ class _GameScreenState extends State<GameScreen>
                                                           ),
                                                           child: Center(
                                                             child: Text(
-                                                              '${2}',
+                                                              '${game.amountList[index]}',
                                                               style: TextStyle(
                                                                 fontSize: 15,
                                                                 fontWeight:
@@ -630,15 +570,13 @@ Widget button(){
   final game = Provider.of<GameController>(context);
   final bet = Provider.of<BetViewModel>(context);
   final cancelBet = Provider.of<CancelBetViewModel>(context);
+  final cashOut = Provider.of<CashOutViewModel>(context);
     return  game.button1==0? InkWell(
       onTap: () {
         print((game.gameData?.period??0)+1);
-        game.gameData?.status==0?bet.betApi("7", game.selectedNumber.toString(), game.gameData?.period.toString() ?? "","1", context):
-        bet.betApi("8", game.selectedNumber.toString(), (game.gameData?.period??0)+1,"2", context);
-
-
-
-      },
+        game.gameData?.status==0?bet.betApi("1", game.selectedNumber.toString(), game.gameData?.period.toString() ?? "","1", context):
+        bet.betApi("1", game.selectedNumber.toString(), (game.gameData?.period??0)+1,"2", context);
+        },
       child: Container(
         height: height * 0.055,
         decoration: BoxDecoration(
@@ -692,8 +630,8 @@ Widget button(){
     ):
     game.button1==1? InkWell(
       onTap: () {
-        game.setButton1(0);
-        game.setNextPeriod(0);
+
+        cashOut.cashOutApi(game.gameData?.timer.toString(), game.gameData?.period.toString(), "1", context);
    /// cash out
       },
       child: Container(
@@ -751,11 +689,12 @@ Widget button(){
         :InkWell(
       onTap: () {
         /// cancel
-        cancelBet.cancelBetApi(
-            game.gameData?.period.toString() ?? "",
-            context);
-        game.setButton1(0);
-        game.setNextPeriod(0);
+        // cancelBet.cancelBetApi(
+        //     game.gameData?.period.toString() ?? "",
+        //     context);
+        game.gameData?.status==0?cancelBet.cancelBetApi(game.gameData?.period.toString(),"1", context)
+            : cancelBet.cancelBetApi((game.gameData?.period??0)+1,"1", context);
+
       },
       child: Container(
         height: height * 0.055,
@@ -800,6 +739,7 @@ Widget button(){
 }
   Widget expansionWidget() {
     final game = Provider.of<GameController>(context);
+    final number = Provider.of<LastFiveResultViewModel>(context).resultData?.data;
     return ExpansionTile(
       collapsedBackgroundColor: Color(0xff262830).withOpacity(0.4),
       tilePadding: EdgeInsets.only(left: 5, right: 5),
@@ -821,18 +761,17 @@ Widget button(){
                   width: width,
                   child: ListView.builder(
                       shrinkWrap: true,
-                      itemCount: 5,
+                      itemCount: number?.length??0,
                       scrollDirection: Axis.horizontal,
                       itemBuilder: (BuildContext context, int index) {
-                        final double price = 0.02;
-                        // double.parse(number[index].price.toString());
+                        final double price = double.parse(number![index].price.toString());
                         Color textColor;
                         if (price > 1 && price < 2) {
                           textColor = Colors.blue;
                         } else if (price >= 2 && price < 10) {
-                          textColor = Colors.white;
+                          textColor = Colors.pink;
                         } else {
-                          textColor = Colors.white;
+                          textColor = Colors.purple;
                         }
                         return Container(
                           // height: height * 0.02,
@@ -849,8 +788,8 @@ Widget button(){
                           ),
                           child: Center(
                             child: Text(
-                              '1.01 X',
-                              // '${number[index].price.toStringAsFixed(2)} X',
+                              // '1.01 X',
+                              '${number[index].price?.toStringAsFixed(2)??0.0} X',
                               style: TextStyle(fontSize: 10, color: textColor),
                             ),
                           ),
@@ -904,7 +843,7 @@ Widget button(){
                   bottomRight: Radius.circular(10))),
           child: GridView.builder(
             shrinkWrap: true,
-            itemCount: 10,
+            itemCount: number?.length??0,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 5,
               crossAxisSpacing: 2,
@@ -912,15 +851,15 @@ Widget button(){
               mainAxisSpacing: 2,
             ),
             itemBuilder: (BuildContext context, int index) {
-              final double price = 2.00;
-              // final double price = double.parse(number[index].price.toString());
+              // final double price = 2.00;
+              final double price = double.parse(number![index].price.toString());
               Color textColor;
               if (price > 1 && price < 2) {
                 textColor = Colors.blue;
               } else if (price >= 2 && price < 10) {
-                textColor = Colors.white;
-              } else {
                 textColor = Colors.pink;
+              } else {
+                textColor = Colors.purple;
               }
               return Padding(
                 padding: const EdgeInsets.all(5.0),
@@ -934,7 +873,7 @@ Widget button(){
                   ),
                   child: Center(
                     child: Text(
-                      '2.01 X',
+                      '${number[index].price?.toStringAsFixed(2)??0.0} X',
                       style: TextStyle(fontSize: 11, color: textColor),
                     ),
                   ),

@@ -45,6 +45,7 @@ class Data {
   dynamic createdAt;
   dynamic updatedAt;
   dynamic crashPoint;
+  dynamic cashOutAmount;
 
   Data(
       {this.id,
@@ -63,7 +64,9 @@ class Data {
         this.resultStatus,
         this.createdAt,
         this.updatedAt,
-        this.crashPoint});
+        this.crashPoint,
+        this.cashOutAmount,
+      });
 
   Data.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -71,11 +74,11 @@ class Data {
     gameId = json['game_id'];
     amount = json['amount'];
     stopMultiplier = json['stop_multiplier'];
-    totalAmount = json['total_amount'];
+    totalAmount = json['totalamount'];
     number = json['number'];
     color = json['color'];
-    gamesno = json['gamesno'];
-    winAmount = json['win_amount'];
+    gamesno = json['game_sr_num'];
+    winAmount = json['win'];
     multiplier = json['multiplier'];
     commission = json['commission'];
     status = json['status'];
@@ -83,6 +86,7 @@ class Data {
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     crashPoint = json['crash_point'];
+    cashOutAmount = json['cashout_amount'];
   }
 
   Map<String, dynamic> toJson() {
@@ -104,6 +108,7 @@ class Data {
     data['created_at'] = createdAt;
     data['updated_at'] = updatedAt;
     data['crash_point'] = crashPoint;
+    data['cashout_amount'] = cashOutAmount;
     return data;
   }
 }

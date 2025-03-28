@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hot_air_balloon/res/app_constant.dart';
 import 'package:hot_air_balloon/view/game_comtorller.dart';
 import 'package:hot_air_balloon/view_model/bet_view_model.dart';
+import 'package:hot_air_balloon/view_model/cash_out_view_model.dart';
+import 'package:hot_air_balloon/view_model/five_result_view_model.dart';
 import 'package:provider/provider.dart';
 
 import 'view/game_screen.dart';
@@ -20,6 +22,8 @@ void main() {
         ChangeNotifierProvider(create: (context) => UpdateImageViewModel()),
         ChangeNotifierProvider(create: (context) => GameHistoryViewModel()),
         ChangeNotifierProvider(create: (context) => CancelBetViewModel()),
+        ChangeNotifierProvider(create: (context) => CashOutViewModel()),
+        ChangeNotifierProvider(create: (context) => LastFiveResultViewModel()),
       ],
       child: MyApp(),
     ),
